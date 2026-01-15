@@ -2,10 +2,77 @@ import React, { useContext } from 'react'
 import { assets, plans } from '../assets/assets'
 import { AppContext } from '../context/AppContext'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-toastify'
+import axios from 'axios'
 
 const BuyCredit = () => {
 
- const {user} = useContext(AppContext)
+ const {user, backendUrl, loadCreditsData, token, setShowLogin} = useContext(AppContext)
+
+ const navigate = useNavigate()
+ const storedToken = token
+ const initPay = (data) => {
+  const options = {
+    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+    amount: data.order.amount,
+    currency: data.order.currency,
+    name: "Credits Payment",
+    description: "Credits Payment",
+    order_id: data.order.id,
+    handler: async function (response) {
+      try {
+        const { data } = await axios.post(
+          backendUrl + "/api/users/verify-razor",
+          response,
+          { headers: { token: storedToken } }
+        );
+
+        if (data.success) {
+          await loadCreditsData();
+          navigate("/");
+          toast.success("Credit Added");
+        } else {
+          toast.error(data.message);
+        }
+      } catch (error) {
+        toast.error(error.message);
+      }
+    }
+  };
+
+  const rzp = new window.Razorpay(options);
+  rzp.open();
+};
+
+
+ 
+
+
+ const paymentRazorpay = async (planId)=>{
+  console.log("User from context:", user);
+
+  console.log("Clicked:", planId); 
+   try{
+    if(!user){
+      setShowLogin(true)
+      return;
+    }
+    
+   const {data} = await axios.post(backendUrl + '/api/users/pay-razor', {planId}, {headers:{token:storedToken}})
+
+   
+   if(data.success){
+  initPay(data)
+}else{
+  toast.error(data.message)
+}
+
+
+   }catch(error){
+    toast.error(error.message)
+   }
+ }
 
   return (
     <motion.div initial={{opacity:0.2,y:100}} transition={{duration:1}} viewport={{once:true}} whileInView={{opacity:1,y:0}} className='text-center min-h-[80vh] pt-14 mb-10'>
@@ -40,7 +107,7 @@ const BuyCredit = () => {
               </span>
               &nbsp;/ {item.credits} credits
             </p>
-            <button className='w-full bg-gray-800 text-white mt-8 text-sm rounded-md py-2.5 min-w-52'>{user ? 'Purchase':'Get Started'}</button>
+            <button onClick={()=>paymentRazorpay(item.id)} className='w-full bg-gray-800 text-white mt-8 text-sm rounded-md py-2.5 min-w-52'>{user ? 'Purchase':'Get Started'}</button>
           </div>
         ))}
 

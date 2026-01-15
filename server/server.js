@@ -10,6 +10,9 @@ import imageRouter from "./routes/imageRoutes.js";
 const app = express()
 const PORT = process.env.PORT || 4000
 
+
+
+
 // VERY IMPORTANT
 app.use(express.json())        
 app.use(cors())

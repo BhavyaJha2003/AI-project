@@ -36,10 +36,11 @@ const Login = () => {
       const { data } = await axios.post(backendUrl + "/api/users/register", { name, email, password });
 
       if (data.success) {
-        setToken(data.token);
+        
         setUser(data.user);
         setCredit(data.user.creditBalance);
         localStorage.setItem("token", data.token);
+        setToken(data.token);
         setShowLogin(false);
       } else {
         toast.error(data.message);
